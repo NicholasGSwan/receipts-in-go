@@ -1,7 +1,9 @@
 package main
 
 import (
-	"NicholasGSwan/receipts-in-go/models"
+	"NicholasGSwan/receipts-in-go/internal/models"
+	"NicholasGSwan/receipts-in-go/internal/pointsservice"
+
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -57,6 +59,21 @@ func setupRouter() *gin.Engine {
 			c.JSON(http.StatusOK, gin.H{"receipt": receipt})
 		}
 
+	})
+
+	r.GET("/receipt/:id/points", func(c *gin.Context) {
+		id := c.Params.ByName("id")
+
+		var receipt models.Receipt
+		result := Database.Model(&models.Receipt{}).Preload("Items").First(&receipt, id)
+
+		if result.Error != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": result.Error.Error()})
+		} else {
+			totalPoints := pointsservice.CalcPoints(receipt)
+			c.JSON(http.StatusOK, gin.H{"totalPoints": totalPoints})
+			//points service -> calc points
+		}
 	})
 
 	// Authorized group (uses gin.BasicAuth() middleware)
